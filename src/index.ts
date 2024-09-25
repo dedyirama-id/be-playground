@@ -1,18 +1,28 @@
-import express from 'express';
-import userRouter from './api/users';
+import express, { type Express } from 'express';
 import { errorHandler } from './middlewares/errorHandler';
+import { UserApi } from './api/users';
+import { UserRepositories } from './repositories/prisma/userRepositories';
+import { userValidator } from './validators/users';
+import config from './config';
 
-const app = express();
-const port = 3000;
+const app: Express = express();
+
+// Repositories
+const userRepositories = new UserRepositories();
+
+// API
+const userApi = new UserApi(userRepositories, userValidator);
 
 // Top App Level Middlewares
 app.use(express.json());
 
-app.use('/api', userRouter);
+app.use('/api', userApi.router);
 
 // End App Level Middlewares
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server berjalan di http://localhost:${port}`);
+const server = app.listen(config.app.port, () => {
+  console.log(`Server berjalan di http://localhost:${config.app.port}`);
 });
+
+export { app, server };

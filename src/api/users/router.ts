@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import { Controller } from './controller';
-import { UserRepositories } from '../../repositories/prisma/UserRepositories';
-import { validator } from './validator';
+import type { Controller } from './controller';
 
-const router: Router = Router();
-const userRepositories = new UserRepositories();
-const controller = new Controller(userRepositories, validator);
+export function apiRouter (controller: Controller): Router {
+  const router = Router();
 
-router.post('/', controller.postUserController);
+  router.post('/users/', controller.postUserController);
+  router.get('/users/:id', controller.getUserByIdController);
+  router.put('/users/:id', controller.putUserByIdController);
+  router.delete('/users/:id', controller.deleteUserByIdController);
 
-export default router;
+  return router;
+}

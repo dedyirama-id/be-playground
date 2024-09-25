@@ -1,8 +1,14 @@
 import { Router } from 'express';
-import router from './router';
+import type { RepositoriesInterface, validatorInterface } from './interface';
+import { Controller } from './controller';
+import { apiRouter } from './router';
 
-const userRouter: Router = Router();
+export class UserApi {
+  readonly router: Router = Router();
 
-userRouter.use('/users', router);
+  constructor (private readonly repositories: RepositoriesInterface, private readonly validator: validatorInterface) {
+    const controller = new Controller(repositories, validator);
 
-export default userRouter;
+    this.router.use(apiRouter(controller));
+  }
+}

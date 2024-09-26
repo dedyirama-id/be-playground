@@ -4,6 +4,7 @@ import { UserApi } from './api/users';
 import { UserRepositories } from './repositories/prisma/userRepositories';
 import { userValidator } from './validators/users';
 import config from './config';
+import { OauthApi } from './api/oauth';
 
 const app: Express = express();
 
@@ -12,11 +13,13 @@ const userRepositories = new UserRepositories();
 
 // API
 const userApi = new UserApi(userRepositories, userValidator);
+const oauthApi = new OauthApi(userRepositories, userValidator);
 
 // Top App Level Middlewares
 app.use(express.json());
 
 app.use('/api', userApi.router);
+app.use('/api', oauthApi.router);
 
 // End App Level Middlewares
 app.use(errorHandler);

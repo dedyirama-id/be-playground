@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "test": "jest",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },
@@ -16,8 +16,11 @@
     "@prisma/client": "^5.19.1",
     "auto-bind": "^5.0.1",
     "bcrypt": "^5.1.1",
+    "be-playground": "link:",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0",
     "joi": "^17.13.3",
     "nanoid": "^5.0.7",
     "prisma": "^5.19.1",

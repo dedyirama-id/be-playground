@@ -1,15 +1,16 @@
-import type { PostUserDomain } from '../../types/domain/PostUserDomain';
-import type { UserDto } from '../../types/dto/userDto';
-
-export interface RepositoriesInterface {
-  addUser: (data: PostUserDomain) => Promise<UserDto>
+export interface UseCaseInterface {
+  registerNewUser: ({ username, password, email }: PostUserDomain) => Promise<UserDto>
   getUserById: (id: string) => Promise<UserDto>
-  updateUserById: (id: string, { username, email }: { username: string, email: string }) => Promise<UserDto>
+  getUserByEmail: (id: string) => Promise<UserDto>
+  updateUserById: (id: string, newData: PostUserDomain) => Promise<UserDto>
   deleteUserById: (id: string, password: string) => Promise<void>
+  verifyUserCredentials: (id: string, password: string) => Promise<void>
+  updateUserGoogleConnection: (id: string, googleRefreshToken: string) => Promise<void>
+  searchUserByEmail: (email: string) => Promise<UserDto | null>
 }
 
-export interface validatorInterface {
-  validatePostUserPayload: (payload: object) => void
-  validatePutUserPayload: (payload: object) => void
-  validateDeleteUserPayload: (payload: object) => void
+export interface ServiceInterface {
+  authUri: string
+  getUserToken: (code: string) => Promise<GoogleOauthDTO>
+  getUserInfo: (googleAccessToken: string, idToken: string) => Promise<GoogleUserInfo>
 }

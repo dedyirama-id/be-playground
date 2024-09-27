@@ -1,16 +1,15 @@
 import { type NextFunction, type Request, type Response } from 'express';
-import { type RepositoriesInterface, type validatorInterface } from './interface';
-import { google } from 'googleapis';
 import { InvariantError } from '../../exceptions/InvariantError';
-import { getAuthorizationUrl, getOauth2Client } from '../../config/google';
+import tokenManager from '../../utils/tokenManager';
+import type { ServiceInterface, UseCaseInterface } from './interface';
+import config from '../../config';
 
 export class Controller {
-  constructor (private readonly repositories: RepositoriesInterface, private readonly validator: validatorInterface) {}
+  constructor (private readonly useCase: UseCaseInterface, private readonly service: ServiceInterface) {}
 
   getOauthGoogleController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const authorizationUrl = await getAuthorizationUrl();
-      res.redirect(authorizationUrl);
+      res.redirect(this.service.authUri);
     } catch (error) {
       next(error);
     }
@@ -19,33 +18,55 @@ export class Controller {
   getOauthGoogleCallbackController = async (req: Request, res: Response, next: NextFunction): Promise<Response | undefined> => {
     try {
       const { code } = req.query;
-      const oauth2Client = await getOauth2Client();
-      const { tokens } = await oauth2Client.getToken(code as string);
 
-      oauth2Client.setCredentials(tokens);
-      const oauth2 = google.oauth2({
-        auth: oauth2Client,
-        version: 'v2'
-      });
+      if (code === undefined) {
+        throw new InvariantError('Invalid login access');
+      };
 
-      const { data } = await oauth2.userinfo.get();
+      const google: GoogleOauthDTO = await this.service.getUserToken(code as string);
+      const userData = await this.service.getUserInfo(google.accessToken, google.idToken);
 
-      if (data?.email == null || data.email.trim() === '') {
+      if (userData?.email == null || userData.email.trim() === '') {
         throw new InvariantError('Invalid user info');
       }
 
-      const user = await this.repositories.addUser({
-        username: data.name ?? '',
-        email: data.email,
+      const user = await this.useCase.searchUserByEmail(userData.email);
+
+      if (user !== null && user !== undefined) {
+        res.redirect(`http://${config.app.host}:${config.app.port}/api/users/${user.id}`);
+        return;
+      }
+
+      const newUser = await this.useCase.registerNewUser({
+        username: userData.name,
+        email: userData.email,
         password: ''
       });
 
-      return res.status(201).json({
+      await this.useCase.updateUserGoogleConnection(newUser.id, google.refreshToken);
+
+      const tokenPayload = {
+        id: newUser.id
+      };
+
+      const accessToken = tokenManager.generateAccessToken(tokenPayload);
+      const refreshToken = tokenManager.generateRefreshToken(tokenPayload);
+
+      const responseBody: ResponseBodyDto = {
         status: 'success',
         data: {
-          id: user.id
+          id: newUser.id,
+          accessToken
         }
-      });
+      };
+
+      if (req.session !== null && req.session !== undefined) {
+        req.session.refreshToken = refreshToken;
+      } else {
+        responseBody.warning = 'Cannot set refresh token to cookie';
+      }
+
+      return res.status(201).json(responseBody);
     } catch (error) {
       next(error);
     }

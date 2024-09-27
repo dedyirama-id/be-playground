@@ -1,4 +1,4 @@
-export interface UserDto {
+declare interface UserDto {
   id: string
   username: string
   email: string

@@ -1,14 +1,12 @@
 import { Router } from 'express';
-import type { RepositoriesInterface, validatorInterface } from './interface';
 import { Controller } from './controller';
 import { apiRouter } from './router';
+import type { ServiceInterface, UseCaseInterface } from './interface';
 
-export class OauthApi {
-  readonly router: Router = Router();
+export const OauthApi = (useCase: UseCaseInterface, service: ServiceInterface): Router => {
+  const router = Router();
+  const controller = new Controller(useCase, service);
 
-  constructor (private readonly repositories: RepositoriesInterface, private readonly validator: validatorInterface) {
-    const controller = new Controller(repositories, validator);
-
-    this.router.use(apiRouter(controller));
-  }
-}
+  router.use(apiRouter(controller));
+  return router;
+};
